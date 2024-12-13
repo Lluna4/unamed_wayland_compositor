@@ -2,31 +2,7 @@
 #include <wayland-server.h>
 #include <stdio.h>
 #include <map>
-
-struct buffer
-{
-    buffer()
-    {
-        content = nullptr;
-        x = 0;
-        y = 0;
-        damage_x = 0;
-        damage_y = 0; 
-        damage_width = 0;
-        damage_height = 0;
-    }
-    buffer(wl_resource *content_, int x_, int y_)
-    :content(content_), x(x_), y(y_)
-    {}
-    wl_resource *content;
-    int x;
-    int y;
-    int damage_x;
-    int damage_y;
-    int damage_width;
-    int damage_height;
-    int buffer_scale;
-};
+#include "shm.h"
 
 struct surface
 {

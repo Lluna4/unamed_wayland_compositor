@@ -9,7 +9,15 @@ void destroy_surface(struct wl_client *client, struct wl_resource *resource)
 
 void attach_surface(struct wl_client *client, struct wl_resource *resource, struct wl_resource *buff, int32_t x, int32_t y)
 {
-    surfaces.find(client)->second.pending_buff = buffer(buff, x, y);
+    auto pool = pools.find(client);
+    if (pool != pools.end())
+    {
+        auto buff = pool->second.buffers.find(resource);
+        if (buff != pool->second.buffers.end())
+        {
+            surfaces.find(client)->second.pending_buff = buff->second;
+        }
+    }
 }
 void damage_surface(struct wl_client *client, struct wl_resource *resource, int32_t x, int32_t y, int32_t width, int32_t height)
 {
@@ -56,7 +64,6 @@ void commit_surface(struct wl_client *client, struct wl_resource *resource)
     auto surface = surfaces.find(client);
     if (surface != surfaces.end())
     {
-        surface->second.pending_buff = buffer(nullptr, 0, 0);
         //send signal to backend to print to buffer and switch buffers
     }
 }
@@ -89,15 +96,15 @@ void offset_surface(struct wl_client *client, struct wl_resource *resource, int3
 
 void create_surface(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
-    wl_resource *ret = wl_resource_create(client, &wl_surface_interface, wl_resource_get_version(resource), id);
-    if (!ret)
+    resource = wl_resource_create(client, &wl_surface_interface, wl_resource_get_version(resource), id);
+    if (!resource)
     {
         printf("surface creation failed!\n");
         return;
     }
     printf("created surface with id %i\n", id);
     surfaces.emplace(client, surface(id, 0, 0));
-    wl_resource_set_implementation(ret, &wl_surface_implementation, nullptr, NULL);
+    wl_resource_set_implementation(resource, &wl_surface_implementation, nullptr, NULL);
 }
 
 void destroy_region(struct wl_client *client, struct wl_resource *resource)
@@ -105,10 +112,10 @@ void destroy_region(struct wl_client *client, struct wl_resource *resource)
     regions.erase(client);
 }
 
-void create_region(struct wl_client *client,struct wl_resource *resource,uint32_t id)
+void create_region(struct wl_client *client,struct wl_resource *resource, uint32_t id)
 {
-    wl_resource *ret = wl_resource_create(client, &wl_region_interface, wl_resource_get_version(resource), id);
-    if (!ret)
+    resource = wl_resource_create(client, &wl_region_interface, wl_resource_get_version(resource), id);
+    if (!resource)
     {
         printf("region creation failed!\n");
         return;
@@ -116,6 +123,7 @@ void create_region(struct wl_client *client,struct wl_resource *resource,uint32_
     regions.emplace(client, region(id, 0, 0));
     //wl_resource_set_implementation(ret, &wl_region_interface, id_ptr, destroy_region); TODO set actual implementation
 }
+
 
 void bind_compositor(struct wl_client *client,void *data,uint32_t version,uint32_t id) 
 {

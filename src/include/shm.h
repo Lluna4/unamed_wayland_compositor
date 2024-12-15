@@ -55,6 +55,7 @@ void shm_create_pool(struct wl_client *client, struct wl_resource *resource, uin
 void shm_release_pool(struct wl_client *client, struct wl_resource *resource);
 void shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resource, uint32_t id, int32_t offset, int32_t width, int32_t height, int32_t stride, uint32_t format);
 void destroy_buffer(struct wl_client *client, struct wl_resource *resource);
+void bind_shm(struct wl_client *client,void *data,uint32_t version,uint32_t id);
 
 static const struct wl_shm_interface wl_shm_implementation = 
 {

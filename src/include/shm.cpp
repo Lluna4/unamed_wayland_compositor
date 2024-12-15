@@ -10,8 +10,11 @@ void shm_create_pool(struct wl_client *client, struct wl_resource *resource, uin
         wl_client_post_no_memory(client);
         return;
     }
+    data[0] = 1;
+    data[1] = 1;
+    printf("created pool with size %i\n", size);
     pools.emplace(client, shm_pool(fd, size, id, data));
-    //wl_resource_set_implementation(resource, &wl_shm_pool_implementation, nullptr, NULL);
+    wl_resource_set_implementation(resource, &wl_shm_pool_implementation, nullptr, NULL);
 }
 
 void shm_release_pool(struct wl_client *client, struct wl_resource *resource)
@@ -46,7 +49,7 @@ void shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resour
     auto pool = pools.find(client);
     if (pool != pools.end())
     {
-        if (((width * height) * stride) + offset > pool->second.size)
+        if (((width * height) * (stride/width)) + offset > pool->second.size)
         {
             wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_STRIDE, "Not enough size to fit buffer");
             return;
@@ -59,6 +62,7 @@ void shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resour
             return;
         }
         wl_resource_set_implementation(resource, &wl_buffer_implementation, nullptr, NULL);
+        printf("created buffer with size %i\n", (width * height) * (stride/width));
     }
 }
 
@@ -73,4 +77,16 @@ void destroy_buffer(wl_client *client, wl_resource *resource)
             pool->second.buffers.erase(resource);
         }
     }
+}
+
+void bind_shm(struct wl_client *client, void *data, uint32_t version, uint32_t id) 
+{
+    struct wl_resource *resource = wl_resource_create(client, &wl_shm_interface, version,id);
+    if (!resource) 
+    {
+        wl_client_post_no_memory(client);
+        return;
+    }
+    wl_resource_set_implementation(resource, &wl_shm_implementation, nullptr, NULL);
+    printf("Shm binded with id %i\n", id);
 }

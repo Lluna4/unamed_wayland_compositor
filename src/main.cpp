@@ -20,6 +20,13 @@ int main()
         printf("Failed to create compositor global\n");
         return -1;
     }
+    
+    wl_global *global_shm = wl_global_create(disp, &wl_shm_interface, 2, NULL, bind_shm);
+    if (!global_shm)
+    {
+        printf("Failed to create shm global\n");
+        return -1;
+    }
     printf("Wayland display is running on %s!\n", sock);
 
     wl_display_run(disp);

@@ -49,7 +49,7 @@ void shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resour
     auto pool = pools.find(client);
     if (pool != pools.end())
     {
-        if (((width * height) * (stride/width)) + offset > pool->second.size)
+        if (((width * height) * (stride/width)) + offset > pool->second.available_size)
         {
             wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_STRIDE, "Not enough size to fit buffer");
             return;
@@ -63,6 +63,41 @@ void shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resour
         }
         wl_resource_set_implementation(resource, &wl_buffer_implementation, nullptr, NULL);
         printf("created buffer with size %i\n", (width * height) * (stride/width));
+        pool->second.available_size -= (width * height) * (stride/width);
+    }
+}
+
+void shm_pool_destroy(struct wl_client *client, struct wl_resource *resource)
+{
+    auto pool = pools.find(client);
+    if (pool != pools.end())
+    {
+        if (munmap(pool->second.data, pool->second.size) != 0)
+        {
+            printf("Memory pool release failed\n");
+            return ;
+        }
+        pools.erase(client);
+    }
+}
+
+void shm_pool_resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
+{
+    auto pool = pools.find(client);
+    if (pool != pools.end())
+    {
+        if (size <= pool->second.size)
+        {
+            printf("Size not valid for resize\n");
+            return ;
+        }
+        pool->second.data = (char *)mmap(pool->second.data, size, PROT_READ | PROT_WRITE, MAP_SHARED, pool->second.fd, 0);
+        if (!pool->second.data)
+        {
+            wl_client_post_no_memory(client);
+            printf("Pool resize failed\n");
+            return;
+        }
     }
 }
 

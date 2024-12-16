@@ -41,9 +41,12 @@ struct shm_pool
 {
     shm_pool(int fd_, int size_, unsigned id_, char *data_)
     :fd(fd_), size(size_), id(id_), data(data_)
-    {}
+    {
+        available_size = size;
+    }
     int fd;
     int size;
+    int available_size;
     unsigned id;
     char *data;
     std::map<wl_resource *, buffer> buffers;
@@ -54,6 +57,8 @@ static std::map<wl_client *, shm_pool> pools;
 void shm_create_pool(struct wl_client *client, struct wl_resource *resource, uint32_t id, int32_t fd, int32_t size);
 void shm_release_pool(struct wl_client *client, struct wl_resource *resource);
 void shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resource, uint32_t id, int32_t offset, int32_t width, int32_t height, int32_t stride, uint32_t format);
+void shm_pool_destroy(struct wl_client *client, struct wl_resource *resource);
+void shm_pool_resize(struct wl_client *client, struct wl_resource *resource, int32_t size);
 void destroy_buffer(struct wl_client *client, struct wl_resource *resource);
 void bind_shm(struct wl_client *client,void *data,uint32_t version,uint32_t id);
 
@@ -65,10 +70,12 @@ static const struct wl_shm_interface wl_shm_implementation =
 
 static const struct wl_buffer_interface wl_buffer_implementation =
 {
-    .destroy = destroy_buffer
+    .destroy = destroy_buffer,
 };
 
 static const struct wl_shm_pool_interface wl_shm_pool_implementation = 
 {
     .create_buffer = shm_pool_create_buffer,
+    .destroy = shm_pool_destroy,
+    .resize = shm_pool_resize
 };

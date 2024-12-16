@@ -15,6 +15,12 @@ struct position
     float x, y;
 };
 
+struct window
+{
+    char *data;
+    int x, y, width, height, stride;
+};
+
 position prev_mouse_fb1 = {0};
 position prev_mouse_fb2 = {0};
 position prev_mouse_abs = {0};
@@ -25,9 +31,9 @@ int height = 0;
 int main_fb = 1;
 char *frame_buffer1;
 char *frame_buffer2;
-bool next_frame_write_b;
-char *next_frame_write;
-int size_next_frame = 0;
+window to_display = {0};
+bool fb1_display = false;
+bool fb2_display = false;
 
 
 void page_flip_handler(int fd, unsigned int sequence, unsigned int tv_sec, unsigned int tv_usec, void *user_data)
@@ -52,15 +58,36 @@ void delete_cursor(int m_pos_x, int m_pos_y, int width ,char *framebuffer)
         for (int y = m_pos_y; y < m_pos_y + 10; y++)
         {
             int pxl_index = (x + width * y) * 4;
-
-            framebuffer[pxl_index] = 0;
-            pxl_index++;
-            framebuffer[pxl_index] = 0;
-            pxl_index++;
-            framebuffer[pxl_index] = 0;
-            pxl_index++;
-            framebuffer[pxl_index] = 255;
-            pxl_index++;
+            int to_display_index = ((x - to_display.x) + to_display.width * (y - to_display.y)) * 4;
+            if (to_display.data != NULL && x < (to_display.x + to_display.width) && y < (to_display.y + to_display.height)
+            && x >= to_display.x && y >= to_display.y)
+            {
+                framebuffer[pxl_index] = to_display.data[to_display_index];
+                pxl_index++;
+                to_display_index++;
+                framebuffer[pxl_index] = to_display.data[to_display_index];
+                pxl_index++;
+                to_display_index++;
+                framebuffer[pxl_index] = to_display.data[to_display_index];
+                pxl_index++;
+                to_display_index++;
+                framebuffer[pxl_index] = to_display.data[to_display_index];
+            }
+            else
+            {
+                framebuffer[pxl_index] = 0;
+                pxl_index++;
+                to_display_index++;
+                framebuffer[pxl_index] = 0;
+                pxl_index++;
+                to_display_index++;
+                framebuffer[pxl_index] = 0;
+                pxl_index++;
+                to_display_index++;
+                framebuffer[pxl_index] = 255;
+                pxl_index++;
+                to_display_index++;
+            }
         }
     }
 }
@@ -206,30 +233,11 @@ void wait_ep(int epfd, int fd)
     drmHandleEvent(fd, &evctx);
 }
 
-void draw_fb(char *data, int size, bool next)
+void draw_fb(char *data, int width, int height, int stride, int x, int y)
 {
-    int fb_to_write = 0;
-    if (main_fb == 1)
-    {
-        fb_to_write = 2;
-    }
-    if (main_fb == 2)
-    {
-        fb_to_write = 1;
-    }
-    for (int i = 0; i < size; i++)
-    {
-        if (fb_to_write == 1)
-            frame_buffer1[i] = data[i];
-        else 
-            frame_buffer2[i] = data[i];
-    }
-    if (next)
-    {
-        next_frame_write = data;
-        size_next_frame = size; 
-        next_frame_write_b = true;
-    }
+    to_display = {.data = data, .x = x, .y = y, .width = width, .height = height, .stride = stride};
+    fb1_display = true;
+    fb2_display = true;
 }
 
 int start(int target_refresh = 60)
@@ -363,14 +371,33 @@ int start(int target_refresh = 60)
     while (1)
     {
         printf("Frame: %i\n", f_number);
-        if (next_frame_write_b)
-        {
-            draw_fb(next_frame_write, size_next_frame, false);
-            next_frame_write_b = false;
-        }
         
         if (main_fb == 1)
         {
+            if (fb2_display)
+            {
+                for (int x = to_display.x; x < to_display.x + to_display.width; x++)
+                {
+                    for (int y = to_display.y; y < to_display.y + to_display.height; y++)
+                    {
+                        int pxl_index = (x + width * y) * 4;
+                        int to_display_index = ((x - to_display.x) + to_display.width * (y - to_display.y)) * 4;
+                        frame_buffer2[pxl_index] = to_display.data[to_display_index];
+                        pxl_index++;
+                        to_display_index++;
+                        frame_buffer2[pxl_index] = to_display.data[to_display_index];
+                        pxl_index++;
+                        to_display_index++;
+                        frame_buffer2[pxl_index] = to_display.data[to_display_index];
+                        pxl_index++;
+                        to_display_index++;
+                        frame_buffer2[pxl_index] = to_display.data[to_display_index];
+                        pxl_index++;
+                        to_display_index++;
+                    }
+                }
+                fb2_display = false;
+            }
             delete_cursor(prev_mouse_fb2.x, prev_mouse_fb2.y, width, frame_buffer2);
             float new_x = lerp(prev_mouse_abs.x, target_mouse.x, lerp_t);
             float new_y = lerp(prev_mouse_abs.y, target_mouse.y, lerp_t);
@@ -385,6 +412,30 @@ int start(int target_refresh = 60)
         }
         else if (main_fb == 2)
         {
+            if (fb1_display)
+            {
+                for (int x = to_display.x; x < to_display.x + to_display.width; x++)
+                {
+                    for (int y = to_display.y; y < to_display.y + to_display.height; y++)
+                    {
+                        int pxl_index = (x + width * y) * 4;
+                        int to_display_index = ((x - to_display.x) + to_display.width * (y - to_display.y)) * 4;
+                        frame_buffer1[pxl_index] = to_display.data[to_display_index];
+                        pxl_index++;
+                        to_display_index++;
+                        frame_buffer1[pxl_index] = to_display.data[to_display_index];
+                        pxl_index++;
+                        to_display_index++;
+                        frame_buffer1[pxl_index] = to_display.data[to_display_index];
+                        pxl_index++;
+                        to_display_index++;
+                        frame_buffer1[pxl_index] = to_display.data[to_display_index];
+                        pxl_index++;
+                        to_display_index++;
+                    }
+                }
+                fb1_display = false;
+            }
             delete_cursor(prev_mouse_fb1.x, prev_mouse_fb1.y, width, frame_buffer1);
             float new_x = lerp(prev_mouse_abs.x, target_mouse.x, lerp_t);
             float new_y = lerp(prev_mouse_abs.y, target_mouse.y, lerp_t);

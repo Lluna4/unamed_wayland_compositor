@@ -57,7 +57,7 @@ void shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resour
             return;
         }
         resource = wl_resource_create(client, &wl_buffer_interface, wl_resource_get_version(resource), id);
-        pool->second.buffers.emplace(resource, buffer(&pool->second.data[offset], 0, 0, width, height, stride, format));
+        pool->second.buffers.emplace(resource, buffer(&pool->second.data[offset], 100, 100, width, height, stride, format));
         if (!resource)
         {
             wl_client_post_no_memory(client);
@@ -190,7 +190,7 @@ void commit_surface(struct wl_client *client, struct wl_resource *resource)
     {
         buffer pending = surface->second.pending_buff;
         
-        draw_fb(pending.content, (pending.width * pending.height) * (pending.stride/pending.width), true);
+        draw_fb(pending.content, pending.width, pending.height, pending.stride, pending.x, pending.y);
     }
 }
 

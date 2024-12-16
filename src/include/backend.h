@@ -23,5 +23,5 @@ float lerp(float v0, float v1, float t);
 void mouse_read();
 void keyboard_read();
 void wait_ep(int epfd, int fd);
-void draw_fb(char *data, int size, bool next);
+void draw_fb(char *data, int width, int height, int stride, int x, int y);
 int start(int target_refresh);

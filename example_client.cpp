@@ -105,18 +105,18 @@ int main()
     
     wl_display_roundtrip(disp);
     wl_surface_set_buffer_scale(surface, 20);
-    int32_t fd = allocate_shared_memory(1920 * 1080 * 4);
-    char *pixel = (char *)mmap(0, 1920 * 1080 * 4, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    struct wl_shm_pool *pool = wl_shm_create_pool(shm, fd, 1920 * 1080 * 4);
-    frame_buff = wl_shm_pool_create_buffer(pool, 0, 1920, 1080, 1920 * 4, WL_SHM_FORMAT_ABGR8888);
+    int32_t fd = allocate_shared_memory(500 * 500 * 4);
+    char *pixel = (char *)mmap(0, 500 * 500 * 4, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    struct wl_shm_pool *pool = wl_shm_create_pool(shm, fd, 500 * 500 * 4);
+    frame_buff = wl_shm_pool_create_buffer(pool, 0, 500, 500, 500 * 4, WL_SHM_FORMAT_ABGR8888);
     while(1)
     {
         colors a = random_color();
-        for (int x = 0; x < 1920; x++)
+        for (int x = 0; x < 500; x++)
         {
-            for (int y = 0; y < 1080; y++)
+            for (int y = 0; y < 500; y++)
             {
-                int pxl_index = (x + 1920 * y) * 4;
+                int pxl_index = (x + 500 * y) * 4;
 
                 pixel[pxl_index] = a.b;
                 pxl_index++;

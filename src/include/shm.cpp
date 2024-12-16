@@ -10,8 +10,6 @@ void shm_create_pool(struct wl_client *client, struct wl_resource *resource, uin
         wl_client_post_no_memory(client);
         return;
     }
-    data[0] = 1;
-    data[1] = 1;
     printf("created pool with size %i\n", size);
     pools.emplace(client, shm_pool(fd, size, id, data));
     wl_resource_set_implementation(resource, &wl_shm_pool_implementation, nullptr, NULL);

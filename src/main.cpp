@@ -28,7 +28,7 @@ int main()
         return -1;
     }
     printf("Wayland display is running on %s!\n", sock);
-
+    std::thread back_th(start, 165);
     wl_display_run(disp);
     wl_display_destroy(disp);
     return 0;
